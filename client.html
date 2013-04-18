@@ -4,31 +4,39 @@
 <button id="sub">Send</button>
 <ul id="resp"></ul>
 
+<script src="client/js/SocketDispatcher.js"></script>
+
 <script>
+    if (!window.WebSocket) { 
+        alert("No websockets :(");
+        return;
+    }
+
     // Assume modern browser, needs websockets anyway
     var m = document.getElementById("message"),
         s = document.getElementById("sub"),
         r = document.getElementById("resp");
 
-    var socket = new WebSocket("ws://localhost:8989/echo/");
+    var server = new SocketDispatcher("ws://localhost:8989/echo/");
     
     s.onclick = function() {
-        sendMsg(m.value);
+        server.send('partial', m.value);
     };
 
-    function sendMsg(msg) {
-        socket.send(msg);
-    }
+    server.on('multiple', function(results) {
 
-    socket.onmessage = function(e) {
-        var li = document.createElement("li");
-        li.textContent = e.data;
-        r.appendChild(li);
-    };
-
-    socket.onclose = function(e) {
-        console.warn("socket closed");
-    }
+        })
+        .on('single', function(result) {
+            var li = document.createElement("li");
+            li.textContent = result;
+            r.appendChild(li);
+        })  
+        .on('close', function(e) {
+            console.warn("Socket Closed");
+        })
+        .on('error', function(){
+            console.error("Socket Error!");
+        });
 
 </script>
 
