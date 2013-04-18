@@ -19,26 +19,45 @@ type JsonMsg struct {
 	Data  string
 }
 
-func JsonServer(ws *websocket.Conn) {
-    var msg JsonMsg
-    fmt.Println("serving socket")
-    for {
-        err := websocket.JSON.Receive(ws, &msg)
-        if err != nil {
-            fmt.Println("rec err")
-            break
-        }
-        fmt.Println(msg)
-        msg.Event = "single"
-        msg.Data = "I heard: "+msg.Data
-        err = websocket.JSON.Send(ws, msg)
-        if err != nil {
-            fmt.Println("send err")
-            break
-        }
-    }
-    
-    fmt.Println("closed socket")
+func DbWebsocketServer(fn func(ws *websocket.Conn, db *sql.DB), db *sql.DB) websocket.Handler {
+	return func(ws *websocket.Conn) {
+		fn(ws, db)
+	}
+}
+
+func JsonServer(ws *websocket.Conn, db *sql.DB) {
+	var msg JsonMsg
+	fmt.Println("serving socket")
+	for {
+		err := websocket.JSON.Receive(ws, &msg)
+		if err != nil {
+			fmt.Println("rec err")
+			break
+		}
+		fmt.Println(msg)
+
+		rows, rerr := db.Query("SELECT full_address FROM dor_parcels where stnam = 'COULTER' limit 10;")
+		if rerr != nil {
+			fmt.Println(rerr)
+			return
+		}
+
+		for rows.Next() {
+			var addr string
+			rows.Scan(&addr)
+			fmt.Println(addr)
+		}
+
+		msg.Event = "single"
+		msg.Data = "I heard: " + msg.Data
+		err = websocket.JSON.Send(ws, msg)
+		if err != nil {
+			fmt.Println("send err")
+			break
+		}
+	}
+
+	fmt.Println("closed socket")
 }
 
 func IndexHandler(c http.ResponseWriter, req *http.Request) {
@@ -51,13 +70,14 @@ func main() {
 		port = os.Args[0]
 	}
 
-    http.Handle("/echo/", websocket.Handler(JsonServer))
 	// Open the database connection pool for use by all socket connections
 	db, dberr := sql.Open("postgres", "user=xxxxx dbname=xxxxx")
 	if dberr != nil {
 		fmt.Println("db")
 		return
 	}
+
+	http.Handle("/echo/", DbWebsocketServer(JsonServer, db))
 	http.Handle("/client/", http.StripPrefix("/client/", http.FileServer(http.Dir("client"))))
 	http.HandleFunc("/", IndexHandler)
 
