@@ -58,7 +58,7 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 		}
 		fmt.Println(results)
 
-		msg.Event = "single"
+		msg.Event = "multiple"
 		b, err := json.Marshal(results)
 		if err != nil {
 			fmt.Println(err)

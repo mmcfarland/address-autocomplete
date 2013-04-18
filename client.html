@@ -24,19 +24,28 @@
     };
 
     server.on('multiple', function(results) {
-
+            var suggestions = JSON.parse(results);
+            suggestions.forEach(createSingleSuggestion)
         })
-        .on('single', function(result) {
-            var li = document.createElement("li");
-            li.textContent = result;
-            r.appendChild(li);
-        })  
+        .on('single', jsonParse(createSingleSuggestion))  
         .on('close', function(e) {
             console.warn("Socket Closed");
         })
         .on('error', function(){
             console.error("Socket Error!");
         });
+
+    function createSingleSuggestion(suggest) {
+        var li = document.createElement("li");
+        li.textContent = suggest.Full;
+        r.appendChild(li);        
+    }
+
+    function jsonParse(fn) {
+        return function(result) {
+            fn(JSON.parse(result));
+        };
+    }
 
 </script>
 
