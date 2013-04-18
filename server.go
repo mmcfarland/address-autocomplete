@@ -2,11 +2,11 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"text/template"
-    "encoding/json"
 
 	"database/sql"
 	_ "github.com/bmizerany/pq"
@@ -20,7 +20,7 @@ type JsonMsg struct {
 	Data  string
 }
 type Address struct {
-    Full string
+	Full string
 }
 
 func DbWebsocketServer(fn func(ws *websocket.Conn, db *sql.DB), db *sql.DB) websocket.Handler {
@@ -46,25 +46,25 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			return
 		}
 
-        results := []Address{}
+		results := []Address{}
 
 		for rows.Next() {
 			var addr string
-            var result Address
+			var result Address
 
 			rows.Scan(&addr)
 			result.Full = addr
-            results = append(results, result)
+			results = append(results, result)
 		}
-        fmt.Println(results)
+		fmt.Println(results)
 
 		msg.Event = "single"
 		b, err := json.Marshal(results)
-        if err != nil {
-            fmt.Println(err)
-            break
-        }
-        msg.Data = string(b)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		msg.Data = string(b)
 
 		err = websocket.JSON.Send(ws, msg)
 		if err != nil {
