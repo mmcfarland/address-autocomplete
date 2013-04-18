@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+    "encoding/json"
 
 	"database/sql"
 	_ "github.com/bmizerany/pq"
@@ -17,6 +18,9 @@ var indexTmpl = template.Must(template.ParseFiles("client.html"))
 type JsonMsg struct {
 	Event string
 	Data  string
+}
+type Address struct {
+    Full string
 }
 
 func DbWebsocketServer(fn func(ws *websocket.Conn, db *sql.DB), db *sql.DB) websocket.Handler {
@@ -42,14 +46,26 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			return
 		}
 
+        results := []Address{}
+
 		for rows.Next() {
 			var addr string
+            var result Address
+
 			rows.Scan(&addr)
-			fmt.Println(addr)
+			result.Full = addr
+            results = append(results, result)
 		}
+        fmt.Println(results)
 
 		msg.Event = "single"
-		msg.Data = "I heard: " + msg.Data
+		b, err := json.Marshal(results)
+        if err != nil {
+            fmt.Println(err)
+            break
+        }
+        msg.Data = string(b)
+
 		err = websocket.JSON.Send(ws, msg)
 		if err != nil {
 			fmt.Println("send err")
@@ -73,7 +89,7 @@ func main() {
 	// Open the database connection pool for use by all socket connections
 	db, dberr := sql.Open("postgres", "user=xxxxx dbname=xxxxx")
 	if dberr != nil {
-		fmt.Println("db")
+		fmt.Println(dberr)
 		return
 	}
 
