@@ -1,0 +1,35 @@
+<html>
+
+<input id="message"></input>
+<button id="sub">Send</button>
+<ul id="resp"></ul>
+
+<script>
+    // Assume modern browser, needs websockets anyway
+    var m = document.getElementById("message"),
+        s = document.getElementById("sub"),
+        r = document.getElementById("resp");
+
+    var socket = new WebSocket("ws://localhost:8989/echo/");
+    
+    s.onclick = function() {
+        sendMsg(m.value);
+    };
+
+    function sendMsg(msg) {
+        socket.send(msg);
+    }
+
+    socket.onmessage = function(e) {
+        var li = document.createElement("li");
+        li.textContent = e.data;
+        r.appendChild(li);
+    };
+
+    socket.onclose = function(e) {
+        console.warn("socket closed");
+    }
+
+</script>
+
+</html>
