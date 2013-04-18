@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+
+	"database/sql"
+	_ "github.com/bmizerany/pq"
 )
 
 var indexTmpl = template.Must(template.ParseFiles("client.html"))
@@ -49,6 +52,12 @@ func main() {
 	}
 
     http.Handle("/echo/", websocket.Handler(JsonServer))
+	// Open the database connection pool for use by all socket connections
+	db, dberr := sql.Open("postgres", "user=xxxxx dbname=xxxxx")
+	if dberr != nil {
+		fmt.Println("db")
+		return
+	}
 	http.Handle("/client/", http.StripPrefix("/client/", http.FileServer(http.Dir("client"))))
 	http.HandleFunc("/", IndexHandler)
 
