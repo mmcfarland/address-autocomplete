@@ -10,17 +10,25 @@ import (
 
 var indexTmpl = template.Must(template.ParseFiles("client.html"))
 
-func EchoServer(ws *websocket.Conn) {
-    var msg string
+// Is there a way to force-expose lower case members (for javascript conventions)?
+type JsonMsg struct {
+    Event string
+    Data string
+}
+
+func JsonServer(ws *websocket.Conn) {
+    var msg JsonMsg
     fmt.Println("serving socket")
     for {
-        err := websocket.Message.Receive(ws, &msg)
+        err := websocket.JSON.Receive(ws, &msg)
         if err != nil {
             fmt.Println("rec err")
             break
         }
         fmt.Println(msg)
-        err = websocket.Message.Send(ws, "I heard: " + msg)
+        msg.Event = "single"
+        msg.Data = "I heard: "+msg.Data
+        err = websocket.JSON.Send(ws, msg)
         if err != nil {
             fmt.Println("send err")
             break
@@ -40,8 +48,10 @@ func main() {
         port = os.Args[0]
     }
 
-    http.Handle("/echo/", websocket.Handler(EchoServer))
+    http.Handle("/echo/", websocket.Handler(JsonServer))
+    http.Handle("/client/",  http.StripPrefix("/client/", http.FileServer(http.Dir("client"))))
     http.HandleFunc("/", IndexHandler)
+    
 
     err := http.ListenAndServe(":"+port, nil)
     if err != nil {
