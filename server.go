@@ -12,16 +12,22 @@ var indexTmpl = template.Must(template.ParseFiles("client.html"))
 
 func EchoServer(ws *websocket.Conn) {
     var msg string
-    fmt.Println("serving")
-    err := websocket.Message.Receive(ws, &msg)
-    if err != nil {
-        fmt.Println("rec err")
+    fmt.Println("serving socket")
+    for {
+        err := websocket.Message.Receive(ws, &msg)
+        if err != nil {
+            fmt.Println("rec err")
+            break
+        }
+        fmt.Println(msg)
+        err = websocket.Message.Send(ws, "I heard: " + msg)
+        if err != nil {
+            fmt.Println("send err")
+            break
+        }
     }
-    fmt.Println(msg)
-    err = websocket.Message.Send(ws, "I heard: " + msg)
-    if err != nil {
-        fmt.Println("send err")
-    }
+    
+    fmt.Println("closed socket")
 }
 
 func IndexHandler(c http.ResponseWriter, req *http.Request) {
