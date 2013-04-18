@@ -15,6 +15,9 @@ var SocketDispatcher = function(url){
     return this;
   };
 
+  // Expose the raw websocket connection
+  this.ws = conn;
+
   var dispatch = function(name, message){
     var chain = callbacks[name];
     if (typeof chain === 'undefined') return;
@@ -34,7 +37,4 @@ var SocketDispatcher = function(url){
       conn['on' + fn.name] = function(){dispatch(fn, null);};
     });
   };
-
-  // Expose the raw websocket connection
-  this.ws = conn;
 };
