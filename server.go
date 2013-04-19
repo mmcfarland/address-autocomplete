@@ -46,11 +46,11 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			return
 		}
 
-        rows, serr := termsStmt.Query(msg.Data+"%", 10)
-        if serr != nil {
-            fmt.Println(serr)
-            return
-        }
+		rows, serr := termsStmt.Query(msg.Data+"%", 10)
+		if serr != nil {
+			fmt.Println(serr)
+			return
+		}
 
 		results := []Address{}
 
