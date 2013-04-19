@@ -40,11 +40,17 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 		}
 		fmt.Println(msg)
 
-		rows, rerr := db.Query("SELECT full_address FROM dor_parcels where stnam = 'COULTER' limit 10;")
-		if rerr != nil {
-			fmt.Println(rerr)
+		termsStmt, serr := db.Prepare("SELECT full_address FROM dor_parcels where full_address like $1 order by full_address limit $2;")
+		if serr != nil {
+			fmt.Println(serr)
 			return
 		}
+
+        rows, serr := termsStmt.Query(msg.Data+"%", 10)
+        if serr != nil {
+            fmt.Println(serr)
+            return
+        }
 
 		results := []Address{}
 
@@ -56,7 +62,6 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			result.Full = addr
 			results = append(results, result)
 		}
-		fmt.Println(results)
 
 		msg.Event = "multiple"
 		b, err := json.Marshal(results)
