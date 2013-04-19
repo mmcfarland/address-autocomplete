@@ -23,8 +23,13 @@
         server.send('partial', m.value);
     };
 
+    m.addEventListener("keyup", function() {
+      server.send('partial', m.value);  
+    });
+
     server.on('multiple', function(results) {
             var suggestions = JSON.parse(results);
+            r.innerHTML = "";
             suggestions.forEach(createSingleSuggestion)
         })
         .on('single', jsonParse(createSingleSuggestion))  
