@@ -27,6 +27,8 @@
         // Cheap optimization - small values (ie. "1") are expensive to search for
         if (m.value.length > 3) {
             server.send('partial', m.value);  
+        } else {
+            r.innerHTML = "";
         }
     });
 
