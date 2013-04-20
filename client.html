@@ -30,6 +30,7 @@
     server.on('multiple', function(results) {
             var suggestions = JSON.parse(results);
             r.innerHTML = "";
+            if (!suggestions) return;
             suggestions.forEach(createSingleSuggestion)
         })
         .on('single', jsonParse(createSingleSuggestion))  
