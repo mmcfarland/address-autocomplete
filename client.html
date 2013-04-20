@@ -24,12 +24,15 @@
     };
 
     m.addEventListener("keyup", function() {
-      server.send('partial', m.value);  
+        // Cheap optimization - small values (ie. "1") are expensive to search for
+        if (m.value.length > 3) {
+            server.send('partial', m.value);  
+        }
     });
 
     server.on('multiple', function(results) {
-            var suggestions = JSON.parse(results);
             r.innerHTML = "";
+            var suggestions = JSON.parse(results);
             if (!suggestions) return;
             suggestions.forEach(createSingleSuggestion)
         })
