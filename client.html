@@ -17,7 +17,7 @@
         s = document.getElementById("sub"),
         r = document.getElementById("resp");
 
-    var server = new SocketDispatcher("ws://localhost:8989/echo/");
+    var server = new SocketDispatcher("ws://localhost:8989/suggest/");
     
     s.onclick = function() {
         server.send('partial', m.value);

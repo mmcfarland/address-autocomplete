@@ -33,26 +33,25 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 	var msg JsonMsg
 	fmt.Println("serving socket")
 	for {
-		err := websocket.JSON.Receive(ws, &msg)
-		if err != nil {
+		if err := websocket.JSON.Receive(ws, &msg); err != nil {
 			fmt.Println("rec err")
 			break
 		}
-		fmt.Println(msg)
 
-		termsStmt, serr := db.Prepare("SELECT full_address FROM dor_parcels where full_address like $1 order by full_address limit $2;")
-		if serr != nil {
-			fmt.Println(serr)
-			return
+		sql := "SELECT full_address FROM dor_parcels where ts_f_address @@ to_tsquery($1) order by full_address limit $2;"
+		termsStmt, err := db.Prepare(sql)
+		if err != nil {
+			fmt.Println(err)
+			break
 		}
 
-		rows, serr := termsStmt.Query(msg.Data+"%", 10)
-		if serr != nil {
-			fmt.Println(serr)
-			return
+		rows, err := termsStmt.Query(msg.Data+":*", 10)
+		if err != nil {
+			fmt.Println(err)
+			break
 		}
 
-		results := []Address{}
+		var results []Address
 
 		for rows.Next() {
 			var addr string
@@ -63,16 +62,15 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			results = append(results, result)
 		}
 
-		msg.Event = "multiple"
-		b, err := json.Marshal(results)
-		if err != nil {
+		if b, err := json.Marshal(results); err != nil {
 			fmt.Println(err)
 			break
-		}
-		msg.Data = string(b)
+		} else {
+			msg.Event = "multiple"
+			msg.Data = string(b)
+		}	
 
-		err = websocket.JSON.Send(ws, msg)
-		if err != nil {
+		if err := websocket.JSON.Send(ws, msg); err != nil {
 			fmt.Println("send err")
 			break
 		}
@@ -81,8 +79,8 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 	fmt.Println("closed socket")
 }
 
-func IndexHandler(c http.ResponseWriter, req *http.Request) {
-	indexTmpl.Execute(c, req.Host)
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+	indexTmpl.Execute(w, r.Host)
 }
 
 func main() {
@@ -98,12 +96,11 @@ func main() {
 		return
 	}
 
-	http.Handle("/echo/", DbWebsocketServer(JsonServer, db))
+	http.Handle("/suggest/", DbWebsocketServer(JsonServer, db))
 	http.Handle("/client/", http.StripPrefix("/client/", http.FileServer(http.Dir("client"))))
 	http.HandleFunc("/", IndexHandler)
 
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
 }
