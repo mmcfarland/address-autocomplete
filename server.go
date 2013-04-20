@@ -3,6 +3,7 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"encoding/json"
+	"strings"
 	"fmt"
 	"net/http"
 	"os"
@@ -45,7 +46,9 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			break
 		}
 
-		rows, err := termsStmt.Query(msg.Data+":*", 10)
+		tsquery := strings.Replace(strings.Trim(msg.Data, " "), " ", " & ", -1) + ":*"
+		fmt.Println(tsquery)
+		rows, err := termsStmt.Query(tsquery, 10)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -90,9 +93,9 @@ func main() {
 	}
 
 	// Open the database connection pool for use by all socket connections
-	db, dberr := sql.Open("postgres", "user=xxxxx dbname=xxxxx")
-	if dberr != nil {
-		fmt.Println(dberr)
+	db, err := sql.Open("postgres", "user=xxxx dbname=xxxxx")
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
