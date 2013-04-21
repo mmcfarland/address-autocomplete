@@ -3,19 +3,25 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"encoding/json"
-	"strings"
-	"fmt"
+	"flag"
 	"net/http"
-	"os"
+	"strconv"
+	"strings"
 	"text/template"
-
+	"os"
+	"log"
 	"database/sql"
 	_ "github.com/bmizerany/pq"
 )
 
+const l = "server.log"
+var f, err = os.OpenFile(l, os.O_APPEND|os.O_CREATE, 0666)
+var lf = log.New(f, "", log.Ldate|log.Ltime)
+
+var port = flag.Int("port", 8989, "Port")
+
 var indexTmpl = template.Must(template.ParseFiles("client.html"))
 
-// Is there a way to force-expose lower case members (for javascript conventions)?
 type JsonMsg struct {
 	Event string
 	Data  string
@@ -32,25 +38,24 @@ func DbWebsocketServer(fn func(ws *websocket.Conn, db *sql.DB), db *sql.DB) webs
 
 func JsonServer(ws *websocket.Conn, db *sql.DB) {
 	var msg JsonMsg
-	fmt.Println("serving socket")
 	for {
 		if err := websocket.JSON.Receive(ws, &msg); err != nil {
-			fmt.Println("rec err")
+			lf.Println(err)
 			break
 		}
 
 		sql := "SELECT full_address FROM dor_parcels where ts_f_address @@ to_tsquery($1) order by full_address limit $2;"
 		termsStmt, err := db.Prepare(sql)
 		if err != nil {
-			fmt.Println(err)
+			lf.Println(err)
 			break
 		}
 
+		// AND together all search tokens with the last using a prefix wildcard
 		tsquery := strings.Replace(strings.Trim(msg.Data, " "), " ", " & ", -1) + ":*"
-		fmt.Println(tsquery)
 		rows, err := termsStmt.Query(tsquery, 10)
 		if err != nil {
-			fmt.Println(err)
+			lf.Println(err)
 			break
 		}
 
@@ -66,20 +71,18 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 		}
 
 		if b, err := json.Marshal(results); err != nil {
-			fmt.Println(err)
+			lf.Println(err)
 			break
 		} else {
 			msg.Event = "multiple"
 			msg.Data = string(b)
-		}	
+		}
 
 		if err := websocket.JSON.Send(ws, msg); err != nil {
-			fmt.Println("send err")
+			lf.Println(err)
 			break
 		}
 	}
-
-	fmt.Println("closed socket")
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,23 +90,24 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port := "8989"
-	if len(os.Args) == 2 {
-		port = os.Args[0]
-	}
 
+	flag.Parse()
+	
 	// Open the database connection pool for use by all socket connections
 	db, err := sql.Open("postgres", "user=xxxx dbname=xxxxx")
 	if err != nil {
-		fmt.Println(err)
+		lf.Println(err)
 		return
 	}
+	defer db.Close()
 
 	http.Handle("/suggest/", DbWebsocketServer(JsonServer, db))
 	http.Handle("/client/", http.StripPrefix("/client/", http.FileServer(http.Dir("client"))))
 	http.HandleFunc("/", IndexHandler)
 
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		panic("ListenAndServe: " + err.Error())
+	if err := http.ListenAndServe(":"+strconv.Itoa(*port), nil); err != nil {
+		lf.Panic("ListenAndServe: " + err.Error())
+	} else {
+		lf.Println("Listening on port: " + strconv.Itoa(*port))
 	}
 }
