@@ -2,19 +2,20 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
+	"database/sql"
 	"encoding/json"
 	"flag"
+	_ "github.com/bmizerany/pq"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"text/template"
-	"os"
-	"log"
-	"database/sql"
-	_ "github.com/bmizerany/pq"
 )
 
 const l = "server.log"
+
 var f, err = os.OpenFile(l, os.O_APPEND|os.O_CREATE, 0666)
 var lf = log.New(f, "", log.Ldate|log.Ltime)
 
@@ -92,7 +93,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	flag.Parse()
-	
+
 	// Open the database connection pool for use by all socket connections
 	db, err := sql.Open("postgres", "user=xxxx dbname=xxxxx")
 	if err != nil {
