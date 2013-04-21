@@ -1,63 +1,20 @@
 <html>
+<head>
+    <title>Philaddress Demo</title>
+    <!-- Might as well use $2.0 because this plugin needs websockets -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="client/jquery.philaddress.js"></script>
+    <link rel="stylesheet" type="text/css" href="client/jquery.philaddress.css"></link>
 
-<input id="message"></input>
-<button id="sub">Send</button>
-<ul id="resp"></ul>
+</head>
+<body>
+    <input id="message"></input>
 
-<script src="client/js/SocketDispatcher.js"></script>
-
-<script>
-    if (!window.WebSocket) { 
-        alert("No websockets :(");
-        return;
-    }
-
-    // Assume modern browser, needs websockets anyway
-    var m = document.getElementById("message"),
-        s = document.getElementById("sub"),
-        r = document.getElementById("resp");
-
-    var server = new SocketDispatcher("ws://localhost:8989/suggest/");
-    
-    s.onclick = function() {
-        server.send('partial', m.value);
-    };
-
-    m.addEventListener("keyup", function() {
-        // Cheap optimization - small values (ie. "1") are expensive to search for
-        if (m.value.length > 3) {
-            server.send('partial', m.value);  
-        } else {
-            r.innerHTML = "";
-        }
-    });
-
-    server.on('multiple', function(results) {
-            r.innerHTML = "";
-            var suggestions = JSON.parse(results);
-            if (!suggestions) return;
-            suggestions.forEach(createSingleSuggestion)
-        })
-        .on('single', jsonParse(createSingleSuggestion))  
-        .on('close', function(e) {
-            console.warn("Socket Closed");
-        })
-        .on('error', function(){
-            console.error("Socket Error!");
+    <script>
+        $("#message").philaddress({
+            url: 'ws://localhost:8989/suggest/'
         });
-
-    function createSingleSuggestion(suggest) {
-        var li = document.createElement("li");
-        li.textContent = suggest.Full;
-        r.appendChild(li);        
-    }
-
-    function jsonParse(fn) {
-        return function(result) {
-            fn(JSON.parse(result));
-        };
-    }
-
-</script>
+    </script>
+</body>
 
 </html>
