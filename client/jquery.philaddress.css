@@ -1,5 +1,23 @@
 .philaddress-list {
     position: absolute;
     background-color: #ffffff;
-    border: 2px solid #000;    
+    border: 1px solid #eee;    
+    list-style: none;
+    box-shadow: 4px 4px 5px rgba(100,100,130,.2);
+    border-radius: 2px;
+    padding: 10px 10px 10px 2px;
+    display: none;
+}
+
+.philaddress-list-item {
+    padding: 3px;
+}
+
+.philaddress-list-item:hover {
+    background-color: #eee;
+    cursor: pointer;
+}
+
+.philaddress-list-item.selected {
+    background-color: #eee;
 }

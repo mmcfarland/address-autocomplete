@@ -10,25 +10,44 @@
         $p = this,
         server = new SocketDispatcher(settings.url),
         $r = $('<ul>', {'class': 'philaddress-list'}),
-        $suggest = $('<span>', {'class': 'philadress-suggest'});
+        $suggest = $('<span>', {'class': 'philadress-suggest'}),
+        selectedIdx = -1;
 
         setupList();
 
         $p.attr('placeholder', "Enter Address");
 
-        $p.bind("keyup.philaddress", function() {
+        $p.bind("keypress.philaddress", function(e) {
+            $p.data('o', $p.val());
             // Cheap optimization - small values (ie. "1") are expensive to search for
             if ($p.val().length > settings.minToSend) {
                 server.send('partial', $p.val());
             } else {
-                $r.empty();
+                $r.empty().hide();
             }
+        }).bind("keydown.philaddress", function(e) {
+            $r.children().removeClass('selected');
+            if (e.which === 40) {
+                if (selectedIdx >= $r.children().length) selectedIdx = -1;
+                $($r.children()[++selectedIdx]).addClass('selected');
+                $p.val($($r.children()[selectedIdx]).text());
+            } else if (e.which === 38) {
+                if (selectedIdx === 0) selectedIdx = $r.children().length +1;
+                $($r.children()[--selectedIdx]).addClass('selected');
+                $p.val($($r.children()[selectedIdx]).text());
+            }
+
         });
 
         server.on('multiple', function(results) {
             $r.empty();
             var suggestions = $.parseJSON(results);
-            if (!suggestions) return;
+            if (suggestions && suggestions.length > 0) {
+                $r.show();
+            } else {
+                $r.hide();
+                return;
+            }
             suggestions.forEach(createSingleSuggestion);
         })
         .on('single', jsonParse(createSingleSuggestion))
