@@ -1,7 +1,7 @@
 (function ($) {
     $.fn.philaddress = function (options) {
         var settings = $.extend({
-            url: 'bayntonhill.org:8989',
+            url: 'suggest.phillygrown.org',
             minToSend: 3,
             maxResults: 10,
             onError: null,
