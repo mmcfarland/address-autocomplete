@@ -1,7 +1,7 @@
 (function ($) {
     $.fn.philaddress = function (options) {
         var settings = $.extend({
-            url: 'ws://suggest.phillygrown.org/suggest/',
+            url: 'ws://parcel.phillygrown.org/suggest/',
             minToSend: 3,
             maxResults: 10,
             onError: null,
