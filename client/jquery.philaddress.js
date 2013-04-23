@@ -10,14 +10,17 @@
         $p = this,
         server = new SocketDispatcher(settings.url),
         $r = $('<ul>', {'class': 'philaddress-list'}),
-        $suggest = $('<span>', {'class': 'philadress-suggest'}),
         selectedIdx = -1;
 
         setupList();
 
+        $(document).on('click', 'li.philaddress-list-item', function(e) {
+            $p.val(e.target.textContent);
+            $r.empty().hide();
+        });
         $p.attr('placeholder', "Enter Address");
 
-        $p.bind("keypress.philaddress", function(e) {
+        function query() {
             $p.data('o', $p.val());
             // Cheap optimization - small values (ie. "1") are expensive to search for
             if ($p.val().length > settings.minToSend) {
@@ -25,22 +28,49 @@
             } else {
                 $r.empty().hide();
             }
-        }).bind("keydown.philaddress", function(e) {
-            $r.children().removeClass('selected');
-            if (e.which === 40) {
-                if (selectedIdx >= $r.children().length) selectedIdx = -1;
-                $($r.children()[++selectedIdx]).addClass('selected');
-                $p.val($($r.children()[selectedIdx]).text());
-            } else if (e.which === 38) {
-                if (selectedIdx === 0) selectedIdx = $r.children().length +1;
-                $($r.children()[--selectedIdx]).addClass('selected');
-                $p.val($($r.children()[selectedIdx]).text());
+        }
+
+        $p.bind("keypress.philaddress", function(e) {
+            query();
+        })
+        .bind("keydown.philaddress", function(e) {
+            var c = $r.children(),
+                l = $r.children().length;
+
+            c.removeClass('selected');
+            // Backspace, delete
+            if (e.keyCode === 8 || e.keyCode === 46) {
+                query();
+
+            // Up/Down
+            } else if (e.keyCode === 40) {
+                if (selectedIdx === l-1) {
+                    $p.val($p.data('o'));
+                    selectedIdx = -1;
+                    return;
+                }
+                $(c[++selectedIdx]).addClass('selected');
+                $p.val($(c[selectedIdx]).text());
+            } else if (e.keyCode === 38) {
+                if (selectedIdx === 0) {
+                    $p.val($p.data('o'));
+                    selectedIdx = l;
+                    return;
+                }
+                $(c[--selectedIdx]).addClass('selected');
+                $p.val($(c[selectedIdx]).text());
+            } else if (e.keyCode === 27) {
+                $p.val($p.data('o'));
+                $r.empty().hide();
+            } else if (e.keyCode === 13 || e.keyCode === 9) {
+                $r.empty().hide();
             }
 
         });
 
         server.on('multiple', function(results) {
             $r.empty();
+            selectedIdx = -1;
             var suggestions = $.parseJSON(results);
             if (suggestions && suggestions.length > 0) {
                 $r.show();
