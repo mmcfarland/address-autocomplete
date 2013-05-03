@@ -47,7 +47,7 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			break
 		}
 
-		sql := "SELECT full_address FROM dor_parcels where ts_f_address @@ to_tsquery($1) order by full_address limit $2;"
+		sql := "SELECT address, owner1, owner2 FROM pwd_parcels where ts_address @@ to_tsquery($1) order by full_address limit $2;"
 		termsStmt, err := db.Prepare(sql)
 		if err != nil {
 			lf.Println(err)
