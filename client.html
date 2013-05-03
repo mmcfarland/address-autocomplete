@@ -3,6 +3,11 @@
     <title>Philaddress Demo</title>
     <!-- Might as well use $2.0 because this plugin needs websockets -->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script>
+        if (!window.jQuery) {
+		document.write('<script src="client/jquery-2.0.0.min.js"><\/script>')
+		    }
+	    </script>
     <script src="client/jquery.philaddress.js"></script>
     <link rel="stylesheet" type="text/css" href="client/jquery.philaddress.css"></link>
 </head>
