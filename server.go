@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
+	"fmt"
 	_ "github.com/bmizerany/pq"
 	"log"
 	"net/http"
@@ -43,22 +44,25 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 	var msg JsonMsg
 	for {
 		if err := websocket.JSON.Receive(ws, &msg); err != nil {
-			lf.Println(err)
+			log.Println(err)
 			break
 		}
 
 		sql := "SELECT address, owner1, owner2 FROM pwd_parcels where ts_address @@ to_tsquery($1) order by full_address limit $2;"
 		termsStmt, err := db.Prepare(sql)
 		if err != nil {
-			lf.Println(err)
+			log.Println(err)
 			break
 		}
+		// Any wildcards will get converted into prefeix wildcard
+		term := strings.Replace(msg.Data, "*", ":*", -1)
 
 		// AND together all search tokens with the last using a prefix wildcard
-		tsquery := strings.Replace(strings.Trim(msg.Data, " "), " ", " & ", -1) + ":*"
+		tsquery := strings.Replace(strings.Trim(term, " "), " ", " & ", -1) + ":*"
 		rows, err := termsStmt.Query(tsquery, 10)
 		if err != nil {
-			lf.Println(err)
+			log.Println(err)
+			fmt.Println(err)
 			break
 		}
 
@@ -67,11 +71,12 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 		for rows.Next() {
 			var result ParcelMatch
 
+			rows.Scan(&result.Address, &result.Owner1, &result.Owner2)
 			results = append(results, result)
 		}
 
 		if b, err := json.Marshal(results); err != nil {
-			lf.Println(err)
+			log.Println(err)
 			break
 		} else {
 			msg.Event = "multiple"
@@ -79,7 +84,7 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 		}
 
 		if err := websocket.JSON.Send(ws, msg); err != nil {
-			lf.Println(err)
+			log.Println(err)
 			break
 		}
 	}
@@ -94,9 +99,9 @@ func main() {
 	flag.Parse()
 
 	// Open the database connection pool for use by all socket connections
-	db, err := sql.Open("postgres", "user=xxxx dbname=xxxxx")
+	db, err := sql.Open("postgres", "user=postgres dbname=dataviewer")
 	if err != nil {
-		lf.Println(err)
+		log.Println(err)
 		return
 	}
 	defer db.Close()
@@ -106,8 +111,8 @@ func main() {
 	http.HandleFunc("/", IndexHandler)
 
 	if err := http.ListenAndServe(":"+strconv.Itoa(*port), nil); err != nil {
-		lf.Panic("ListenAndServe: " + err.Error())
+		log.Panic("ListenAndServe: " + err.Error())
 	} else {
-		lf.Println("Listening on port: " + strconv.Itoa(*port))
+		log.Println("Listening on port: " + strconv.Itoa(*port))
 	}
 }
