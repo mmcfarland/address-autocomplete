@@ -24,11 +24,13 @@ var port = flag.Int("port", 8989, "Port")
 var indexTmpl = template.Must(template.ParseFiles("client.html"))
 
 type JsonMsg struct {
-	Event string
-	Data  string
+	Event string `json:"event"`
+	Data  string `json:"data"`
 }
-type Address struct {
-	Full string
+type ParcelMatch struct {
+	Address string `json:"address"`
+	Owner1  string `json:"owner1"`
+	Owner2  string `json:"owner2"`
 }
 
 func DbWebsocketServer(fn func(ws *websocket.Conn, db *sql.DB), db *sql.DB) websocket.Handler {
@@ -60,14 +62,11 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			break
 		}
 
-		var results []Address
+		var results []ParcelMatch
 
 		for rows.Next() {
-			var addr string
-			var result Address
+			var result ParcelMatch
 
-			rows.Scan(&addr)
-			result.Full = addr
 			results = append(results, result)
 		}
 

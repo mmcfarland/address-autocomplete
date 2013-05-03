@@ -18,7 +18,7 @@
             $p.val(e.target.textContent);
             $r.empty().hide();
         });
-        $p.attr('placeholder', "Enter Address");
+        $p.attr('placeholder', "Enter address");
 
         function query() {
             $p.data('o', $p.val());
@@ -126,7 +126,7 @@
         };
 
         this.send = function(name, data){
-            var payload = JSON.stringify({Event: name, Data: data});
+            var payload = JSON.stringify({Event: name, data: data});
             conn.send(payload);
             return this;
          };
@@ -144,7 +144,7 @@
 
         conn.onmessage = function(e){
             var json = JSON.parse(e.data);
-            dispatch(json.Event, json.Data);
+            dispatch(json.event, json.data);
         };
 
         conn.onopen = function() {
