@@ -94,7 +94,7 @@
 
         function createSingleSuggestion(suggest) {
             var $li = $('<li>', {'class': 'philaddress-list-item'});
-            $li.text(suggest.Full);
+            $li.text(suggest.address + " (" + suggest.owner1 + " " + suggest.owner2 + ")");
             $r.append($li);
         }
 
