@@ -29,9 +29,11 @@ type JsonMsg struct {
 	Data  string `json:"data"`
 }
 type ParcelMatch struct {
-	Address string `json:"address"`
-	Owner1  string `json:"owner1"`
-	Owner2  string `json:"owner2"`
+	Address  string `json:"address"`
+	Owner1   string `json:"owner1"`
+	Owner2   string `json:"owner2"`
+	Pos      string `json:"pos"`
+	ParcelId int    `json:"parcelId"`
 }
 
 func DbWebsocketServer(fn func(ws *websocket.Conn, db *sql.DB), db *sql.DB) websocket.Handler {
@@ -48,7 +50,10 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 			break
 		}
 
-		sql := "SELECT address, owner1, owner2 FROM pwd_parcels where ts_address @@ to_tsquery($1) order by full_address limit $2;"
+		sql := `SELECT parcelid, address, owner1, owner2, concat('[',ST_Y(pos),',', ST_X(pos),']') as coord
+                FROM pwd_parcels 
+                WHERE ts_address @@ to_tsquery($1) 
+                ORDER BY full_address limit $2;`
 		termsStmt, err := db.Prepare(sql)
 		if err != nil {
 			log.Println(err)
@@ -71,7 +76,8 @@ func JsonServer(ws *websocket.Conn, db *sql.DB) {
 		for rows.Next() {
 			var result ParcelMatch
 
-			rows.Scan(&result.Address, &result.Owner1, &result.Owner2)
+			rows.Scan(&result.ParcelId, &result.Address, &result.Owner1,
+				&result.Owner2, &result.Pos)
 			results = append(results, result)
 		}
 
