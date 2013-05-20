@@ -17,7 +17,10 @@
 
     <script>
         $("#message").philaddress({
-            url: 'ws://localhost:8989/suggest/'
+            url: 'ws://localhost:8989/suggest/',
+            onSelect: function(parcel) {
+                console.log(parcel);
+            }
         });
     </script>
 </body>

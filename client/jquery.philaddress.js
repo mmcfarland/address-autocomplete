@@ -5,20 +5,29 @@
             minToSend: 3,
             maxResults: 10,
             onError: null,
-            onClose: null
+            onClose: null,
+            onSelect: null
         }, options),
         $p = this,
         server = new SocketDispatcher(settings.url),
         $r = $('<ul>', {'class': 'philaddress-list'}),
-        selectedIdx = -1;
+        selectedIdx = -1, 
+        _suggestions;
 
         setupList();
 
         $(document).on('click', 'li.philaddress-list-item', function(e) {
             $p.val(e.target.textContent);
             $r.empty().hide();
+            emitChoice();
         });
         $p.attr('placeholder', "Enter address");
+
+        function emitChoice() {
+            if (_suggestions && settings.onSelect && typeof (settings.onSelect) === 'function') {
+                settings.onSelect(_suggestions[selectedIdx === -1 ? 0 : selectedIdx]);
+            }
+        }
 
         function query() {
             $p.data('o', $p.val());
@@ -64,6 +73,7 @@
                 $r.empty().hide();
             } else if (e.keyCode === 13 || e.keyCode === 9) {
                 $r.empty().hide();
+                emitChoice();
             }
 
         });
@@ -71,14 +81,14 @@
         server.on('multiple', function(results) {
             $r.empty();
             selectedIdx = -1;
-            var suggestions = $.parseJSON(results);
-            if (suggestions && suggestions.length > 0) {
+            _suggestions = $.parseJSON(results);
+            if (_suggestions && _suggestions.length > 0) {
                 $r.show();
             } else {
                 $r.hide();
                 return;
             }
-            suggestions.forEach(createSingleSuggestion);
+            _suggestions.forEach(createSingleSuggestion);
         })
         .on('single', jsonParse(createSingleSuggestion))
         .on('close', function(e) {
